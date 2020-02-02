@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wzp.module.quartz.mapper.JobMapper">
+
+    <resultMap id="job" type="com.wzp.module.quartz.bean.QuartzJob">
+        <id column="jobId" property="id" javaType="String"/>
+        <result column="jobCreateDate" property="createDate" javaType="Date"/>
+        <result column="jobUpdateDate" property="updateDate" javaType="Date"/>
+        <result column="jobStatus" property="status" javaType="String" />
+        <result column="jobName" property="jobName" javaType="String"/>
+        <result column="jobGroup" property="jobGroup" javaType="String"/>
+        <result column="jobCron" property="cron" javaType="String"/>
+        <result column="jobInvokeClass" property="invokeClass" javaType="String"/>
+        <result column="jobMethodName" property="methodName" javaType="String"/>
+        <result column="jobMethodParam" property="methodParam" javaType="String"/>
+        <result column="jobSpringBeanName" property="springBeanName" javaType="String"/>
+    </resultMap>
+
+
+    <sql id="jobColumn">
+        j.id as jobId,j.create_date as jobCreateDate,j.update_date as jobUpdateDate,j.status as jobStatus,j.job_name as jobName,j.job_group as jobGroup,
+        j.cron as jobCron,j.invoke_class as jobInvokeClass,j.method_name as jobMethodName,j.method_param as jobMethodParam,j.spring_bean_name as jobSpringBeanName
+    </sql>
+
+    <select id="list" resultMap="job">
+        select <include refid="jobColumn"/> from quartz_job
+    </select>
+
+    <select id="details" parameterType="String" resultMap="job">
+        select <include refid="jobColumn"/> from quartz_job j where j.id = #{jobId}
+    </select>
+
+    <update id="update" parameterType="com.wzp.module.quartz.bean.QuartzJob">
+        update quartz_job
+        <!--set标签会自动将多余逗号去除,效果等同于trim中的suffixOverrides=","-->
+        <!--<set>-->
+            <!--<if test="status != null">status=#{status},</if>-->
+            <!--<if test="jobName != null">job_name=#{jobName},</if>-->
+            <!--<if test="jobGroup != null">job_group=#{jobGroup},</if>-->
+            <!--<if test="cron != null">cron=#{cron},</if>-->
+            <!--<if test="invokeClass != null">invoke_class=#{invokeClass},</if>-->
+            <!--<if test="methodName != null">method_name=#{methodName},</if>-->
+            <!--<if test="methodParam != null">method_param=#{methodParam},</if>-->
+            <!--<if test="springBeanName != null">spring_bean_name=#{springBeanName},</if>-->
+        <!--</set>-->
+        <trim prefix="set" suffixOverrides=",">
+            <if test="status != null">status=#{status},</if>
+            <if test="jobName != null">job_name=#{jobName},</if>
+            <if test="jobGroup != null">job_group=#{jobGroup},</if>
+            <if test="cron != null">cron=#{cron},</if>
+            <if test="invokeClass != null">invoke_class=#{invokeClass},</if>
+            <if test="methodName != null">method_name=#{methodName},</if>
+            <if test="methodParam != null">method_param=#{methodParam},</if>
+            <if test="springBeanName != null">spring_bean_name=#{springBeanName},</if>
+            <if test="1 == 1">update_date = DATE_FORMAT(NOW(),'%Y-%m-%d %H:%m:%s'),</if>
+        </trim>
+        where id=#{id}
+    </update>
+
+    <select id="detailsByCondition" parameterType="hashmap" resultMap="job">
+        select <include refid="jobColumn"/>
+        from quartz_job j
+        <where>
+            <if test="id != null">and j.id = #{id}</if>
+            <if test="status != null">and j.status = #{status}</if>
+            <if test="jobName != null">and j.job_name=#{jobName}</if>
+            <if test="jobGroup != null">and j.job_group=#{jobGroup}</if>
+            <if test="cron != null">and j.cron=#{cron}</if>
+            <if test="invokeClass != null">and j.invoke_class=#{invokeClass}</if>
+            <if test="methodName != null">and j.method_name=#{methodName}</if>
+            <if test="springBeanName != null">and j.spring_bean_name=#{springBeanName}</if>
+            <if test="methodParam != null">and j.method_param=#{methodParam}</if>
+            <if test="createDate != null">and j.create_date like #{createDate}"%"</if>
+        </where>
+    </select>
+
+
+
+</mapper>
