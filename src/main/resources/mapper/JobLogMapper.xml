@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wzp.module.quartz.mapper.JobLogMapper">
+
+    <resultMap id="log" type="com.wzp.module.quartz.bean.JobLog">
+        <id column="logId" property="id" javaType="String"/>
+        <result column="logName" property="name" javaType="String"/>
+        <result column="logStatus" property="status" javaType="String" />
+        <result column="logStartTime" property="startTime" javaType="Date"/>
+        <result column="logEndTime" property="endTime" javaType="Date"/>
+        <result column="logNextTime" property="nextTime" javaType="Date"/>
+        <result column="logException" property="exception" javaType="String"/>
+        <result column="logParam" property="param" javaType="String"/>
+        <result column="logAddress" property="address" javaType="String"/>
+    </resultMap>
+
+
+    <sql id="logColumn">
+        log.id as logId,log.name as logName,log.status as logStatus,log.start_time as logStartTime,log.end_time as logEndTime,log.next_time as logNextTime,
+        log.exception as logException,log.param as logParam,log.address as logAddress
+    </sql>
+
+    <insert id="create" parameterType="com.wzp.module.quartz.bean.JobLog" keyProperty="id" useGeneratedKeys="true">
+        <selectKey keyProperty="id" resultType="string" order="BEFORE">
+            select REPLACE(UUID(),'-','')
+        </selectKey>
+        insert into quartz_job_log values (#{id},#{name},#{status},#{startTime},#{endTime},#{nextTime}
+        ,#{exception},#{param},#{address})
+    </insert>
+
+
+
+
+</mapper>

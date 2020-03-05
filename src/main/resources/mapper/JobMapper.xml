@@ -4,6 +4,7 @@
 
     <resultMap id="job" type="com.wzp.module.quartz.bean.QuartzJob">
         <id column="jobId" property="id" javaType="String"/>
+        <result column="jobAlias" property="alias" javaType="String"/>
         <result column="jobCreateDate" property="createDate" javaType="Date"/>
         <result column="jobUpdateDate" property="updateDate" javaType="Date"/>
         <result column="jobStatus" property="status" javaType="String" />
@@ -18,7 +19,7 @@
 
 
     <sql id="jobColumn">
-        j.id as jobId,j.create_date as jobCreateDate,j.update_date as jobUpdateDate,j.status as jobStatus,j.job_name as jobName,j.job_group as jobGroup,
+        j.id as jobId,j.alias as jobAlias,j.create_date as jobCreateDate,j.update_date as jobUpdateDate,j.status as jobStatus,j.job_name as jobName,j.job_group as jobGroup,
         j.cron as jobCron,j.invoke_class as jobInvokeClass,j.method_name as jobMethodName,j.method_param as jobMethodParam,j.spring_bean_name as jobSpringBeanName
     </sql>
 
@@ -44,6 +45,7 @@
             <!--<if test="springBeanName != null">spring_bean_name=#{springBeanName},</if>-->
         <!--</set>-->
         <trim prefix="set" suffixOverrides=",">
+            <if test="status != null">alias=#{alias},</if>
             <if test="status != null">status=#{status},</if>
             <if test="jobName != null">job_name=#{jobName},</if>
             <if test="jobGroup != null">job_group=#{jobGroup},</if>
@@ -62,6 +64,7 @@
         from quartz_job j
         <where>
             <if test="id != null">and j.id = #{id}</if>
+            <if test="alias != null">and j.alias =#{alias}</if>
             <if test="status != null">and j.status = #{status}</if>
             <if test="jobName != null">and j.job_name=#{jobName}</if>
             <if test="jobGroup != null">and j.job_group=#{jobGroup}</if>

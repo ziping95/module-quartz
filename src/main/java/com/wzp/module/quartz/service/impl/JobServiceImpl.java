@@ -2,6 +2,7 @@ package com.wzp.module.quartz.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.wzp.module.core.utils.SpringUtil;
 import com.wzp.module.core.utils.StringUtil;
 import com.wzp.module.quartz.QuartzJobConstant;
 import com.wzp.module.quartz.bean.QuartzJob;
@@ -37,13 +38,9 @@ public class JobServiceImpl implements JobService {
     public void runJobFromList(List<QuartzJob> jobs) throws Exception {
 
         for (QuartzJob job : jobs) {
-            runJob(job);
+            job.runJob();
         }
     }
-
-    @Autowired
-    private ApplicationContext applicationContext;
-
 
     @Override
     public List<QuartzJob> list() {
@@ -62,7 +59,7 @@ public class JobServiceImpl implements JobService {
         }
 
         // 启动任务
-        runJob(job);
+        job.runJob();
 
         job.setStatus("1");
         jobMapper.update(job);
@@ -134,98 +131,8 @@ public class JobServiceImpl implements JobService {
         scheduler.triggerJob(jobKey);
     }
 
-    private void runJob (QuartzJob job) throws Exception {
-        MethodInvokingJobDetailFactoryBean jobDetail = new MethodInvokingJobDetailFactoryBean();
-        // 禁止并发
-        jobDetail.setConcurrent(false);
-        Class clazz = Class.forName(job.getInvokeClass());
-        jobDetail.setName(job.getJobName());
-        jobDetail.setGroup(job.getJobGroup());
-        jobDetail.setTargetClass(clazz);
-        jobDetail.setTargetMethod(job.getMethodName());
-        String beanName = job.getSpringBeanName();
 
-        // 如果beanName为空则默认类名小写
-        if (StringUtils.isEmpty(beanName)) {
-            beanName = handleBeanName(job.getInvokeClass());
-        }
-        Object targetObject = applicationContext.getBean(beanName);
 
-        // 对cglib方式代理的bean做处理
-        targetObject = handleProxyObject(targetObject);
 
-        if (targetObject == null) {
-            throw new Exception("获取定时任务bean失败");
-        }
 
-        jobDetail.setTargetObject(targetObject);
-        String paramJson = job.getMethodParam();
-
-        if (StringUtils.isNotEmpty(paramJson)) {
-            jobDetail.setArguments(handleParam(paramJson));
-        }
-
-        jobDetail.afterPropertiesSet();
-
-        // 设置定时器
-        Trigger trigger = TriggerBuilder.newTrigger().withIdentity(job.getJobName(), job.getJobGroup())
-                .withSchedule(CronScheduleBuilder.cronSchedule(job.getCron())).startNow().build();
-
-        // 设置调度器
-        scheduler.scheduleJob(jobDetail.getObject(), trigger);
-        if (!scheduler.isShutdown()) {
-            scheduler.start();
-        }
-    }
-
-    /**
-     * 类名首字母小写
-     *
-     * @param rawName
-     * @return
-     */
-    private String handleBeanName(String rawName) {
-        String clazzName = rawName.substring(rawName.lastIndexOf(".") + 1);
-        return clazzName.substring(0, 1).toLowerCase() + clazzName.substring(1);
-    }
-
-    /**
-     * 解析json获得定时任务参数
-     *
-     * @param rawJson
-     * @return
-     * @throws ClassNotFoundException
-     */
-    private Object[] handleParam(String rawJson) throws ClassNotFoundException {
-        JSONArray paramArray = JSONArray.parseArray(rawJson);
-        Object[] param = new Object[paramArray.size()];
-        for (int i = 0; i < paramArray.size(); i++) {
-            JSONObject temp = paramArray.getJSONObject(i);
-            String clazz = temp.getString("clazz");
-            param[i] = temp.getObject("param", Class.forName(clazz));
-        }
-        return param;
-    }
-
-    /**
-     * 处理cglib方式代理的对象
-     * @param beanInstance
-     * @return
-     * @throws Exception
-     */
-    private Object handleProxyObject(Object beanInstance) throws Exception {
-
-        // 判断是否为cglib方式代理
-        if (AopUtils.isCglibProxy(beanInstance)) {
-
-            Field h = beanInstance.getClass().getDeclaredField("CGLIB$CALLBACK_0");
-            h.setAccessible(true);
-            Object dynamicAdvisedInterceptor = h.get(beanInstance);
-
-            Field advised = dynamicAdvisedInterceptor.getClass().getDeclaredField("advised");
-            advised.setAccessible(true);
-            return  (((AdvisedSupport) advised.get(dynamicAdvisedInterceptor)).getTargetSource()).getTarget();
-        }
-        return beanInstance;
-    }
 }

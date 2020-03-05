@@ -1,25 +1,56 @@
 package com.wzp.module.quartz;
 
-import com.wzp.module.quartz.test.CglibProxy;
-import com.wzp.module.quartz.test.TestCglib;
-import org.springframework.cglib.core.DebuggingClassWriter;
-
-import javax.print.DocFlavor;
+import java.net.*;
+import java.util.Enumeration;
 
 public class QuartzJobConstant {
 
     public final static String JOB_RUN = "1";
     public final static String JOB_STOP = "0";
+    // 每个任务的分布式锁 name_group_version
+    public final static String JOB_LOCK = "%s_%s_%d";
 
-    public static void main(String[] args) {
-        long start = System.currentTimeMillis();
+    public static String getLocalIp() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || networkInterface.isVirtual() || !networkInterface.isUp()) {
+                    continue;
+                }
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                if (addresses.hasMoreElements()) {
+                    return addresses.nextElement().getHostAddress();
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-        CglibProxy cglibProxy = new CglibProxy();
-        TestCglib testCglib = (TestCglib) cglibProxy.CreatProxyedObj(TestCglib.class);
-        testCglib.sayHello("cglib代理");
-
-        long end = System.currentTimeMillis();
-        System.out.println("运行时间为：" + String.valueOf(end - start));
-
+    public static InetAddress getLocalIp(boolean preferIpv4, boolean preferIPv6) throws SocketException {
+        Enumeration en = NetworkInterface.getNetworkInterfaces();
+        while (en.hasMoreElements()) {
+            NetworkInterface i = (NetworkInterface) en.nextElement();
+            for (Enumeration en2 = i.getInetAddresses(); en2.hasMoreElements();) {
+                InetAddress addr = (InetAddress) en2.nextElement();
+                if (!addr.isLoopbackAddress()) {
+                    if (addr instanceof Inet4Address) {
+                        if (preferIPv6) {
+                            continue;
+                        }
+                        return addr;
+                    }
+                    if (addr instanceof Inet6Address) {
+                        if (preferIpv4) {
+                            continue;
+                        }
+                        return addr;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
